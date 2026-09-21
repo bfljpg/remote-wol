@@ -35,11 +35,6 @@ func main() {
 	// Initialize auth (reads users from DB)
 	authService := auth.New(cfg.JWTSecret, database)
 
-	// Seed initial admin on first run (only when users table is empty)
-	if err := authService.SeedAdmin(cfg.InitialAdminUser, cfg.InitialAdminPass); err != nil {
-		log.Fatalf("Failed to seed admin user: %v", err)
-	}
-
 	// Initialize agent client
 	agentClient := agent.NewClient(cfg.AgentURL, cfg.AgentToken)
 
@@ -49,8 +44,13 @@ func main() {
 	// Setup router
 	mux := http.NewServeMux()
 
-	// Auth routes
+	// Auth routes (unprotected)
+	mux.HandleFunc("/api/auth/setup-status", authService.SetupStatusHandler)
+	mux.HandleFunc("/api/auth/setup", authService.SetupHandler)
 	mux.HandleFunc("/api/auth/login", authService.LoginHandler)
+
+	// Protected auth routes
+	mux.Handle("/api/auth/status", authService.Middleware(http.HandlerFunc(authService.StatusHandler)))
 	mux.Handle("/api/auth/change-password", authService.Middleware(http.HandlerFunc(authService.ChangePasswordHandler)))
 
 	// Protected API routes

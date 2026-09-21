@@ -40,15 +40,88 @@
     const deleteModal    = $('#delete-modal');
     const deleteConfirm  = $('#delete-confirm');
     const deleteDevName  = $('#delete-device-name');
+    const passwordBtn       = $('#password-btn');
+    const passwordModal     = $('#password-modal');
+    const passwordForm      = $('#password-form');
+    const passwordClose     = $('#password-modal-close');
+    const passwordCancel    = $('#password-cancel');
+    const passwordError     = $('#password-error');
+    const passwordBanner    = $('#default-password-banner');
+    const bannerChangeBtn   = $('#banner-change-pass-btn');
+    const setupForm         = $('#setup-form');
+    const loginCard         = $('#login-card');
+    const setupCard         = $('#setup-card');
 
     // ─── Init ───────────────────────────────────
-    function init() {
+    async function init() {
+        token = localStorage.getItem('wol_token');
         if (token) {
             showDashboard();
         } else {
+            await checkSetupStatus();
             showLogin();
         }
         bindEvents();
+    }
+
+    // ─── First-run Setup ────────────────────────
+    async function checkSetupStatus() {
+        try {
+            const res = await api('/api/auth/setup-status', { noAuth: true });
+            if (res && res.needs_setup) {
+                if (loginCard) loginCard.style.display = 'none';
+                if (setupCard) setupCard.style.display = 'block';
+            } else {
+                if (loginCard) loginCard.style.display = 'block';
+                if (setupCard) setupCard.style.display = 'none';
+            }
+        } catch (e) {
+            // fallback to normal login
+        }
+    }
+
+    async function handleSetup(e) {
+        e.preventDefault();
+        const errEl = $('#setup-error');
+        errEl.style.display = 'none';
+
+        const username = $('#setup-username').value.trim();
+        const password = $('#setup-password').value;
+        const confirm = $('#setup-confirm').value;
+
+        if (password !== confirm) {
+            errEl.textContent = 'Şifreler eşleşmiyor!';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        if (password.length < 6) {
+            errEl.textContent = 'Şifre en az 6 karakter olmalıdır!';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        const btn = $('#setup-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Kuruluyor...';
+
+        try {
+            const res = await api('/api/auth/setup', {
+                method: 'POST',
+                body: JSON.stringify({ username, password }),
+                noAuth: true,
+            });
+            token = res.token;
+            localStorage.setItem('wol_token', token);
+            toast('Yönetici hesabı başarıyla oluşturuldu!', 'success');
+            showDashboard();
+        } catch (err) {
+            errEl.textContent = err.message || 'Kurulum başarısız oldu';
+            errEl.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-rounded">check_circle</span> Hesabı Oluştur ve Başla';
+        }
     }
 
     // ─── Auth ───────────────────────────────────
@@ -63,6 +136,7 @@
         dashboardScreen.classList.add('active');
         loadDevices();
         checkAgentHealth();
+        checkPasswordStatus();
         startStatusPolling();
     }
 
@@ -86,6 +160,76 @@
         token = null;
         localStorage.removeItem('wol_token');
         showLogin();
+    }
+
+    // ─── Password Management ────────────────────
+    async function checkPasswordStatus() {
+        try {
+            const res = await api('/api/auth/status');
+            if (res.is_default_password) {
+                if (passwordBanner) passwordBanner.style.display = 'flex';
+            } else {
+                if (passwordBanner) passwordBanner.style.display = 'none';
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function openPasswordModal() {
+        if (!passwordModal) return;
+        passwordForm.reset();
+        passwordError.style.display = 'none';
+        passwordError.textContent = '';
+        passwordModal.style.display = 'flex';
+        const oldInput = $('#old-password');
+        if (oldInput) oldInput.focus();
+    }
+
+    function closePasswordModal() {
+        if (!passwordModal) return;
+        passwordModal.style.display = 'none';
+    }
+
+    async function changePassword(e) {
+        e.preventDefault();
+        passwordError.style.display = 'none';
+
+        const oldPass = $('#old-password').value;
+        const newPass = $('#new-password').value;
+        const confirmPass = $('#confirm-password').value;
+
+        if (newPass !== confirmPass) {
+            passwordError.textContent = 'Yeni şifreler eşleşmiyor!';
+            passwordError.style.display = 'block';
+            return;
+        }
+
+        if (newPass.length < 6) {
+            passwordError.textContent = 'Yeni şifre en az 6 karakter olmalıdır!';
+            passwordError.style.display = 'block';
+            return;
+        }
+
+        const submitBtn = $('#password-submit');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Güncelleniyor...';
+
+        try {
+            await api('/api/auth/change-password', {
+                method: 'POST',
+                body: JSON.stringify({ old_password: oldPass, new_password: newPass }),
+            });
+            toast('Şifreniz başarıyla güncellendi!', 'success');
+            closePasswordModal();
+            if (passwordBanner) passwordBanner.style.display = 'none';
+        } catch (err) {
+            passwordError.textContent = err.message || 'Şifre güncellenemedi';
+            passwordError.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span class="material-symbols-rounded">lock_reset</span> Şifreyi Güncelle';
+        }
     }
 
     // ─── API Helper ─────────────────────────────
@@ -483,6 +627,8 @@
             login(user, pass);
         });
 
+        if (setupForm) setupForm.addEventListener('submit', handleSetup);
+
         logoutBtn.addEventListener('click', logout);
         addDeviceBtn.addEventListener('click', openAddModal);
         refreshBtn.addEventListener('click', () => {
@@ -508,6 +654,13 @@
             btn.addEventListener('click', closeDeleteModal);
         });
 
+        // Password modal
+        if (passwordBtn) passwordBtn.addEventListener('click', openPasswordModal);
+        if (bannerChangeBtn) bannerChangeBtn.addEventListener('click', openPasswordModal);
+        if (passwordClose) passwordClose.addEventListener('click', closePasswordModal);
+        if (passwordCancel) passwordCancel.addEventListener('click', closePasswordModal);
+        if (passwordForm) passwordForm.addEventListener('submit', changePassword);
+
         // Close modals on overlay click
         deviceModal.addEventListener('click', (e) => {
             if (e.target === deviceModal) closeModal();
@@ -515,12 +668,18 @@
         deleteModal.addEventListener('click', (e) => {
             if (e.target === deleteModal) closeDeleteModal();
         });
+        if (passwordModal) {
+            passwordModal.addEventListener('click', (e) => {
+                if (e.target === passwordModal) closePasswordModal();
+            });
+        }
 
         // ESC key to close modals
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeModal();
                 closeDeleteModal();
+                closePasswordModal();
             }
         });
     }

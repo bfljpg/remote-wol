@@ -54,8 +54,8 @@ cd remote-wol
 
 # .env dosyasını oluştur
 cp server/.env.example .env
-# .env dosyasını düzenle — JWT_SECRET, INITIAL_ADMIN_PASS, RATHOLE_TOKEN, AGENT_TOKEN değerlerini belirleyin!
-# (Tüm servisler —Go backend ve Rathole tüneli— ayarlarını tek bir .env dosyasından alır)
+# .env dosyasını düzenle — JWT_SECRET, RATHOLE_TOKEN, AGENT_TOKEN değerlerini belirleyin!
+# (Yönetici hesabı .env gerektirmez; tarayıcıda ilk açılışta oluşturulur)
 
 # Başlat
 docker compose up -d
@@ -152,8 +152,8 @@ remote-wol/
 ## ⚠️ Güvenlik
 
 - `.env` dosyasındaki `JWT_SECRET` değerini mutlaka değiştirin
-- `INITIAL_ADMIN_PASS` şifresini güçlü yapın (yalnızca ilk kurulumda veritabanını tohumlamak için kullanılır)
-- Admin kimlik bilgileri SQLite veritabanında bcrypt hash olarak saklanır; dilediğiniz zaman API üzerinden şifrenizi güncelleyebilirsiniz
+- İlk kurulumda tarayıcıdan güçlü bir yönetici şifresi belirleyin
+- Admin kimlik bilgileri SQLite veritabanında bcrypt hash olarak saklanır; dilediğiniz zaman arayüzden veya modal üzerinden şifrenizi güncelleyebilirsiniz
 - `AGENT_TOKEN` değerlerinin VPS ve modemde aynı olduğundan emin olun
 - Rathole `server.toml` ve `client.toml` dosyalarındaki token'ları eşleştirin
 - VPS üzerinde firewall kurallarıyla sadece gerekli portları açın (3000, 2333)

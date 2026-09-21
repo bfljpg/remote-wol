@@ -25,8 +25,14 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	Token     string `json:"token"`
-	ExpiresIn int    `json:"expires_in"`
+	Token             string `json:"token"`
+	ExpiresIn         int    `json:"expires_in"`
+	IsDefaultPassword bool   `json:"is_default_password"`
+}
+
+type setupRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func New(jwtSecret string, database *db.DB) *Auth {
@@ -36,23 +42,89 @@ func New(jwtSecret string, database *db.DB) *Auth {
 	}
 }
 
-// SeedAdmin creates the initial admin user if the users table is empty.
-// Called once at startup; uses INITIAL_ADMIN_USER/PASS from config.
-func (a *Auth) SeedAdmin(username, plainPassword string) error {
+// SetupStatusHandler checks if the application needs first-run admin setup
+func (a *Auth) SetupStatusHandler(w http.ResponseWriter, r *http.Request) {
 	count, err := a.database.CountUsers()
 	if err != nil {
-		return err
+		http.Error(w, `{"error":"database error"}`, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{
+		"needs_setup": count == 0,
+	})
+}
+
+// SetupHandler handles the first-run administrator account creation
+func (a *Auth) SetupHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	count, err := a.database.CountUsers()
+	if err != nil {
+		http.Error(w, `{"error":"database error"}`, http.StatusInternalServerError)
+		return
 	}
 	if count > 0 {
-		return nil // Already has users, skip seeding
+		http.Error(w, `{"error":"setup already completed"}`, http.StatusBadRequest)
+		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+	var req setupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	req.Username = strings.TrimSpace(req.Username)
+	if req.Username == "" {
+		http.Error(w, `{"error":"username is required"}`, http.StatusBadRequest)
+		return
+	}
+	if len(req.Password) < 6 {
+		http.Error(w, `{"error":"password must be at least 6 characters"}`, http.StatusBadRequest)
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		http.Error(w, `{"error":"failed to hash password"}`, http.StatusInternalServerError)
+		return
 	}
 
-	return a.database.CreateUser(username, string(hash))
+	if err := a.database.CreateUser(req.Username, string(hash)); err != nil {
+		http.Error(w, `{"error":"failed to create user"}`, http.StatusInternalServerError)
+		return
+	}
+
+	user, err := a.database.GetUserByUsername(req.Username)
+	if err != nil {
+		http.Error(w, `{"error":"failed to load user"}`, http.StatusInternalServerError)
+		return
+	}
+
+	expiry := time.Now().Add(24 * time.Hour)
+	claims := jwt.MapClaims{
+		"sub": user.Username,
+		"uid": user.ID,
+		"exp": expiry.Unix(),
+		"iat": time.Now().Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenStr, err := token.SignedString(a.jwtSecret)
+	if err != nil {
+		http.Error(w, `{"error":"failed to generate token"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(loginResponse{
+		Token:             tokenStr,
+		ExpiresIn:         int(time.Until(expiry).Seconds()),
+		IsDefaultPassword: false,
+	})
 }
 
 func (a *Auth) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,10 +171,31 @@ func (a *Auth) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isDefault := req.Password == "admin"
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(loginResponse{
-		Token:     tokenStr,
-		ExpiresIn: int(time.Until(expiry).Seconds()),
+		Token:             tokenStr,
+		ExpiresIn:         int(time.Until(expiry).Seconds()),
+		IsDefaultPassword: isDefault,
+	})
+}
+
+// StatusHandler returns the current authenticated user's profile and default password status
+func (a *Auth) StatusHandler(w http.ResponseWriter, r *http.Request) {
+	username := GetUsernameFromContext(r)
+	user, err := a.database.GetUserByUsername(username)
+	if err != nil {
+		http.Error(w, `{"error":"user not found"}`, http.StatusNotFound)
+		return
+	}
+
+	isDefault := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte("admin")) == nil
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"username":            user.Username,
+		"is_default_password": isDefault,
 	})
 }
 

@@ -982,3 +982,78 @@ body::before {
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
 }
+
+/* ==============================
+   Security Warning Banner
+   ============================== */
+
+.warning-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 24px;
+    margin: 20px auto 0 auto;
+    max-width: 1200px;
+    width: calc(100% - 48px);
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
+    animation: slideDown 0.3s ease-out;
+}
+
+.warning-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.warning-banner .warning-icon {
+    font-size: 26px;
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.warning-text {
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.warning-text strong {
+    color: #f59e0b;
+}
+
+.btn-warning-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #f59e0b;
+    color: #000;
+    font-weight: 600;
+    font-size: 0.88rem;
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.btn-warning-action:hover {
+    background: #d97706;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

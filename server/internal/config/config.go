@@ -7,13 +7,11 @@ import (
 )
 
 type Config struct {
-	Port               string
-	DBPath             string
-	JWTSecret          string
-	InitialAdminUser   string
-	InitialAdminPass   string
-	AgentURL           string
-	AgentToken         string
+	Port       string
+	DBPath     string
+	JWTSecret  string
+	AgentURL   string
+	AgentToken string
 }
 
 func Load() *Config {
@@ -21,13 +19,11 @@ func Load() *Config {
 	loadEnvFile(".env")
 
 	return &Config{
-		Port:             getEnv("PORT", "3000"),
-		DBPath:           getEnv("DB_PATH", "./data/wol.db"),
-		JWTSecret:        getEnv("JWT_SECRET", "change-me-to-a-random-secret-at-least-32-chars"),
-		InitialAdminUser: getEnv("INITIAL_ADMIN_USER", getEnv("ADMIN_USER", "admin")),
-		InitialAdminPass: getEnv("INITIAL_ADMIN_PASS", getEnv("ADMIN_PASS", "admin")),
-		AgentURL:         getEnv("AGENT_URL", "http://127.0.0.1:9090"),
-		AgentToken:       getEnv("AGENT_TOKEN", "change-me-agent-secret"),
+		Port:       getEnv("PORT", "3000"),
+		DBPath:     getEnv("DB_PATH", "/app/data/wol.db"),
+		JWTSecret:  getEnv("JWT_SECRET", "change-me-to-a-random-secret-at-least-32-chars"),
+		AgentURL:   getEnv("AGENT_URL", "http://127.0.0.1:9090"),
+		AgentToken: getEnv("AGENT_TOKEN", "change-me-agent-secret"),
 	}
 }
 
