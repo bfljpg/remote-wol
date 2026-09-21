@@ -39,6 +39,7 @@ eval $(echo "$QUERY_STRING" | tr '&' '\n' | while read pair; do
     echo "$key=$val"
 done)
 
+[ -f /etc/wol-agent.conf ] && . /etc/wol-agent.conf
 AGENT_TOKEN="${AGENT_TOKEN:-change-me-agent-secret}"
 if [ "$token" != "$AGENT_TOKEN" ]; then
     echo '{"success":false,"message":"unauthorized"}'
@@ -84,6 +85,7 @@ eval $(echo "$QUERY_STRING" | tr '&' '\n' | while read pair; do
     echo "$key=$val"
 done)
 
+[ -f /etc/wol-agent.conf ] && . /etc/wol-agent.conf
 AGENT_TOKEN="${AGENT_TOKEN:-change-me-agent-secret}"
 if [ "$token" != "$AGENT_TOKEN" ]; then
     echo '{"alive":false,"ip":"","error":"unauthorized"}'
@@ -121,6 +123,7 @@ eval $(echo "$QUERY_STRING" | tr '&' '\n' | while read pair; do
     echo "$key=$val"
 done)
 
+[ -f /etc/wol-agent.conf ] && . /etc/wol-agent.conf
 AGENT_TOKEN="${AGENT_TOKEN:-change-me-agent-secret}"
 if [ "$token" != "$AGENT_TOKEN" ]; then
     echo '{"status":"unauthorized"}'

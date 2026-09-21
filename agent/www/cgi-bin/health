@@ -13,6 +13,7 @@ eval $(echo "$QUERY_STRING" | tr '&' '\n' | while read pair; do
 done)
 
 # Token validation
+[ -f /etc/wol-agent.conf ] && . /etc/wol-agent.conf
 AGENT_TOKEN="${AGENT_TOKEN:-change-me-agent-secret}"
 if [ "$token" != "$AGENT_TOKEN" ]; then
     echo '{"status":"unauthorized"}'
