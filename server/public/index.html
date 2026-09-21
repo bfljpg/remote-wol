@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Remote Wake-on-LAN — Uzaktan bilgisayar açma ve yönetim paneli">
+    <title>Remote WoL — Uzaktan Bilgisayar Yönetimi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- Login Screen -->
+<section id="login-screen" class="screen active">
+    <div class="login-container">
+        <div class="login-card glass">
+            <div class="login-header">
+                <div class="login-icon">
+                    <span class="material-symbols-rounded">power_settings_new</span>
+                </div>
+                <h1>Remote WoL</h1>
+                <p>Uzaktan bilgisayar yönetim paneli</p>
+            </div>
+            <form id="login-form" autocomplete="off">
+                <div class="input-group">
+                    <span class="material-symbols-rounded input-icon">person</span>
+                    <input type="text" id="login-username" placeholder="Kullanıcı adı" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <span class="material-symbols-rounded input-icon">lock</span>
+                    <input type="password" id="login-password" placeholder="Şifre" required autocomplete="current-password">
+                </div>
+                <button type="submit" id="login-btn" class="btn btn-primary btn-full">
+                    <span class="material-symbols-rounded">login</span>
+                    Giriş Yap
+                </button>
+                <p id="login-error" class="error-text"></p>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Dashboard -->
+<section id="dashboard-screen" class="screen">
+    <!-- Header -->
+    <header class="app-header glass">
+        <div class="header-left">
+            <span class="material-symbols-rounded header-logo">power_settings_new</span>
+            <h1>Remote WoL</h1>
+        </div>
+        <div class="header-right">
+            <div id="agent-status" class="agent-badge disconnected" title="Agent Durumu">
+                <span class="agent-dot"></span>
+                <span class="agent-text">Bağlantı yok</span>
+            </div>
+            <button id="refresh-btn" class="btn btn-icon" title="Yenile">
+                <span class="material-symbols-rounded">refresh</span>
+            </button>
+            <button id="add-device-btn" class="btn btn-accent" title="Cihaz Ekle">
+                <span class="material-symbols-rounded">add</span>
+                <span class="btn-label">Cihaz Ekle</span>
+            </button>
+            <button id="logout-btn" class="btn btn-icon" title="Çıkış">
+                <span class="material-symbols-rounded">logout</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Device Grid -->
+    <main class="dashboard-content">
+        <div id="device-grid" class="device-grid">
+            <!-- Devices rendered here by JS -->
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none;">
+            <span class="material-symbols-rounded empty-icon">devices</span>
+            <h2>Henüz cihaz eklenmemiş</h2>
+            <p>Başlamak için yukarıdaki "Cihaz Ekle" butonuna tıklayın.</p>
+        </div>
+    </main>
+</section>
+
+<!-- Device Modal -->
+<div id="device-modal" class="modal-overlay" style="display:none;">
+    <div class="modal glass">
+        <div class="modal-header">
+            <h2 id="modal-title">Yeni Cihaz Ekle</h2>
+            <button id="modal-close" class="btn btn-icon">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+        <form id="device-form">
+            <input type="hidden" id="device-id">
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="device-name">Cihaz Adı</label>
+                    <input type="text" id="device-name" placeholder="Örn: Ana Bilgisayar" required>
+                </div>
+                <div class="input-group">
+                    <label for="device-mac">MAC Adresi</label>
+                    <input type="text" id="device-mac" placeholder="AA:BB:CC:DD:EE:FF" required
+                           pattern="^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$">
+                </div>
+                <div class="input-group">
+                    <label for="device-ip">IP Adresi</label>
+                    <input type="text" id="device-ip" placeholder="192.168.1.100">
+                </div>
+                <div class="input-group">
+                    <label for="device-iface">Ağ Arayüzü</label>
+                    <input type="text" id="device-iface" placeholder="br-lan" value="br-lan">
+                </div>
+                <div class="input-group full-width">
+                    <label>Cihaz İkonu</label>
+                    <div class="icon-picker" id="icon-picker">
+                        <button type="button" class="icon-option active" data-icon="desktop_windows">
+                            <span class="material-symbols-rounded">desktop_windows</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="laptop">
+                            <span class="material-symbols-rounded">laptop</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="dns">
+                            <span class="material-symbols-rounded">dns</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="storage">
+                            <span class="material-symbols-rounded">storage</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="smart_display">
+                            <span class="material-symbols-rounded">smart_display</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="videogame_asset">
+                            <span class="material-symbols-rounded">videogame_asset</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="modal-cancel" class="btn btn-ghost">İptal</button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="material-symbols-rounded">save</span>
+                    Kaydet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal-overlay" style="display:none;">
+    <div class="modal glass modal-sm">
+        <div class="modal-header">
+            <h2>Cihazı Sil</h2>
+            <button class="btn btn-icon delete-modal-close">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+        <p class="delete-text">
+            <strong id="delete-device-name"></strong> cihazını silmek istediğinize emin misiniz?
+        </p>
+        <div class="modal-actions">
+            <button class="btn btn-ghost delete-modal-close">İptal</button>
+            <button id="delete-confirm" class="btn btn-danger">
+                <span class="material-symbols-rounded">delete</span>
+                Sil
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

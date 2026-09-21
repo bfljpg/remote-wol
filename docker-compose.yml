@@ -1,0 +1,30 @@
+services:
+  # Web uygulaması (Go backend + embedded frontend)
+  wol-app:
+    build: .
+    container_name: remote-wol
+    ports:
+      - "3000:3000"
+    volumes:
+      - wol-data:/app/data
+    env_file:
+      - .env
+    environment:
+      - AGENT_URL=http://rathole-server:9090
+    depends_on:
+      - rathole-server
+    restart: unless-stopped
+
+  # Rathole tünel sunucusu
+  rathole-server:
+    image: rapiz1/rathole:latest
+    container_name: rathole-server
+    ports:
+      - "2333:2333"
+    volumes:
+      - ./rathole/server.toml:/app/config.toml:ro
+    command: ["--server", "/app/config.toml"]
+    restart: unless-stopped
+
+volumes:
+  wol-data:
