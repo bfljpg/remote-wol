@@ -1,0 +1,27 @@
+#!/bin/sh
+# Remote WoL Agent — Health Check CGI Script
+# Usage: GET /cgi-bin/health?token=SECRET
+
+echo "Content-Type: application/json"
+echo ""
+
+# Parse query parameters
+eval $(echo "$QUERY_STRING" | tr '&' '\n' | while read pair; do
+    key=$(echo "$pair" | cut -d= -f1)
+    val=$(echo "$pair" | cut -d= -f2-)
+    echo "$key=$val"
+done)
+
+# Token validation
+AGENT_TOKEN="${AGENT_TOKEN:-change-me-agent-secret}"
+if [ "$token" != "$AGENT_TOKEN" ]; then
+    echo '{"status":"unauthorized"}'
+    exit 0
+fi
+
+# Gather system info
+HOSTNAME=$(cat /proc/sys/kernel/hostname 2>/dev/null || echo "unknown")
+UPTIME=$(cat /proc/uptime 2>/dev/null | awk '{printf "%d saat %d dakika", $1/3600, ($1%3600)/60}')
+LOAD=$(cat /proc/loadavg 2>/dev/null | awk '{print $1}')
+
+echo "{\"status\":\"ok\",\"hostname\":\"$HOSTNAME\",\"uptime\":\"$UPTIME\",\"load\":\"$LOAD\"}"

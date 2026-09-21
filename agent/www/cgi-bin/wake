@@ -1,0 +1,51 @@
+#!/bin/sh
+# Remote WoL Agent — Wake CGI Script
+# OpenWrt BusyBox httpd CGI endpoint
+# Usage: GET /cgi-bin/wake?mac=AA:BB:CC:DD:EE:FF&iface=br-lan&token=SECRET
+
+echo "Content-Type: application/json"
+echo ""
+
+# Parse query parameters
+eval $(echo "$QUERY_STRING" | tr '&' '\n' | while read pair; do
+    key=$(echo "$pair" | cut -d= -f1)
+    val=$(echo "$pair" | cut -d= -f2-)
+    echo "$key=$val"
+done)
+
+# Token validation
+AGENT_TOKEN="${AGENT_TOKEN:-change-me-agent-secret}"
+if [ "$token" != "$AGENT_TOKEN" ]; then
+    echo '{"success":false,"message":"unauthorized"}'
+    exit 0
+fi
+
+# Validate MAC address
+if [ -z "$mac" ]; then
+    echo '{"success":false,"message":"mac parameter required"}'
+    exit 0
+fi
+
+# Default interface
+if [ -z "$iface" ]; then
+    iface="br-lan"
+fi
+
+# Validate MAC format (basic check)
+echo "$mac" | grep -qE '^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$'
+if [ $? -ne 0 ]; then
+    echo '{"success":false,"message":"invalid MAC address format"}'
+    exit 0
+fi
+
+# Send magic packet
+if etherwake -i "$iface" "$mac" 2>/dev/null; then
+    echo "{\"success\":true,\"message\":\"Magic packet sent to $mac via $iface\"}"
+else
+    # Fallback: try with ether-wake (some OpenWrt versions)
+    if ether-wake -i "$iface" "$mac" 2>/dev/null; then
+        echo "{\"success\":true,\"message\":\"Magic packet sent to $mac via $iface\"}"
+    else
+        echo '{"success":false,"message":"etherwake command failed"}'
+    fi
+fi
