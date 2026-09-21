@@ -20,6 +20,14 @@ type Device struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
+type User struct {
+	ID           int64     `json:"id"`
+	Username     string    `json:"username"`
+	PasswordHash string    `json:"-"` // never expose in JSON
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 type DB struct {
 	conn *sql.DB
 }
@@ -54,19 +62,66 @@ func (d *DB) Close() error {
 }
 
 func (d *DB) migrate() error {
-	query := `
-	CREATE TABLE IF NOT EXISTS devices (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL,
-		mac_address TEXT NOT NULL,
-		ip_address TEXT NOT NULL DEFAULT '',
-		net_interface TEXT NOT NULL DEFAULT 'br-lan',
-		icon TEXT NOT NULL DEFAULT 'desktop',
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	);
-	`
-	_, err := d.conn.Exec(query)
+	queries := []string{
+		`CREATE TABLE IF NOT EXISTS devices (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			mac_address TEXT NOT NULL,
+			ip_address TEXT NOT NULL DEFAULT '',
+			net_interface TEXT NOT NULL DEFAULT 'br-lan',
+			icon TEXT NOT NULL DEFAULT 'desktop',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL UNIQUE,
+			password_hash TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)`,
+	}
+	for _, q := range queries {
+		if _, err := d.conn.Exec(q); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ─── User methods ────────────────────────────────────────────
+
+func (d *DB) GetUserByUsername(username string) (*User, error) {
+	var u User
+	err := d.conn.QueryRow(
+		"SELECT id, username, password_hash, created_at, updated_at FROM users WHERE username = ?",
+		username,
+	).Scan(&u.ID, &u.Username, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (d *DB) CreateUser(username, passwordHash string) error {
+	_, err := d.conn.Exec(
+		"INSERT INTO users (username, password_hash) VALUES (?, ?)",
+		username, passwordHash,
+	)
+	return err
+}
+
+func (d *DB) CountUsers() (int, error) {
+	var count int
+	err := d.conn.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
+	return count, err
+}
+
+func (d *DB) UpdatePassword(username, newHash string) error {
+	_, err := d.conn.Exec(
+		"UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?",
+		newHash, username,
+	)
 	return err
 }
 

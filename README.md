@@ -54,7 +54,8 @@ cd remote-wol
 
 # .env dosyasını oluştur
 cp server/.env.example .env
-# .env dosyasını düzenle — JWT_SECRET, ADMIN_PASS, AGENT_TOKEN değiştir!
+# .env dosyasını düzenle — JWT_SECRET, INITIAL_ADMIN_PASS, AGENT_TOKEN değiştir!
+# (Admin bilgileri ilk açılışta veritabanına aktarılır, sonrasında DB üzerinden yönetilir)
 
 # Rathole token'ını ayarla
 # rathole/server.toml dosyasındaki token'ı değiştir
@@ -140,8 +141,9 @@ remote-wol/
 
 | Method | Path | Açıklama |
 |--------|------|----------|
-| POST | `/api/auth/login` | Giriş yap, JWT token al |
-| GET | `/api/devices` | Tüm cihazları listele |
+| POST | `/api/auth/login` | Giriş yap ve JWT al |
+| POST | `/api/auth/change-password` | Şifre değiştir (JWT gerekli) |
+| GET | `/api/devices` | Cihaz listesi |
 | POST | `/api/devices` | Yeni cihaz ekle |
 | PUT | `/api/devices/{id}` | Cihaz güncelle |
 | DELETE | `/api/devices/{id}` | Cihaz sil |
@@ -153,7 +155,8 @@ remote-wol/
 ## ⚠️ Güvenlik
 
 - `.env` dosyasındaki `JWT_SECRET` değerini mutlaka değiştirin
-- `ADMIN_PASS` şifresini güçlü yapın
+- `INITIAL_ADMIN_PASS` şifresini güçlü yapın (yalnızca ilk kurulumda veritabanını tohumlamak için kullanılır)
+- Admin kimlik bilgileri SQLite veritabanında bcrypt hash olarak saklanır; dilediğiniz zaman API üzerinden şifrenizi güncelleyebilirsiniz
 - `AGENT_TOKEN` değerlerinin VPS ve modemde aynı olduğundan emin olun
 - Rathole `server.toml` ve `client.toml` dosyalarındaki token'ları eşleştirin
 - VPS üzerinde firewall kurallarıyla sadece gerekli portları açın (3000, 2333)
