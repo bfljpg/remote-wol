@@ -84,11 +84,10 @@ esac
 RATHOLE_VERSION="v0.5.0"
 RATHOLE_URL="https://github.com/rapiz1/rathole/releases/download/${RATHOLE_VERSION}/rathole-${RATHOLE_ARCH}.zip"
 
-cd /tmp
 curl -L -o rathole.zip "$RATHOLE_URL"
 unzip -o rathole.zip
-mv rathole /usr/local/bin/rathole
-chmod +x /usr/local/bin/rathole
+mv rathole /usr/bin/rathole
+chmod +x /usr/bin/rathole
 rm -f rathole.zip
 
 # ─── 6. Rathole client yapılandırması ───
@@ -111,7 +110,7 @@ START=98
 STOP=11
 
 start() {
-    /usr/local/bin/rathole --client /etc/rathole/client.toml &
+    /usr/bin/rathole --client /etc/rathole/client.toml &
     echo "Rathole client started"
 }
 
