@@ -223,7 +223,9 @@ START=98
 STOP=11
 
 start() {
-    /usr/bin/rathole --client /etc/rathole/client.toml &
+    killall rathole 2>/dev/null || true
+    sleep 1
+    /usr/bin/rathole --client /etc/rathole/client.toml >/dev/null 2>&1 &
     echo "Rathole client started"
 }
 
@@ -238,9 +240,9 @@ chmod +x /etc/init.d/rathole
 # ─── 8. Servisleri etkinleştir ve başlat ───
 echo "🚀 Servisler başlatılıyor..."
 /etc/init.d/wol-agent enable
-/etc/init.d/wol-agent start
+/etc/init.d/wol-agent restart
 /etc/init.d/rathole enable
-/etc/init.d/rathole start
+/etc/init.d/rathole restart
 
 echo ""
 echo "╔══════════════════════════════════════════╗"
