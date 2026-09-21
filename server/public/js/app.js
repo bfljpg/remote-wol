@@ -54,14 +54,23 @@
 
     // ─── Init ───────────────────────────────────
     async function init() {
+        bindEvents();
+
+        // Always check if first-run setup is required first
+        const needsSetup = await checkSetupStatus();
+        if (needsSetup) {
+            token = null;
+            localStorage.removeItem('wol_token');
+            showLogin();
+            return;
+        }
+
         token = localStorage.getItem('wol_token');
         if (token) {
             showDashboard();
         } else {
-            await checkSetupStatus();
             showLogin();
         }
-        bindEvents();
     }
 
     // ─── First-run Setup ────────────────────────
@@ -71,12 +80,16 @@
             if (res && res.needs_setup) {
                 if (loginCard) loginCard.style.display = 'none';
                 if (setupCard) setupCard.style.display = 'block';
+                return true;
             } else {
                 if (loginCard) loginCard.style.display = 'block';
                 if (setupCard) setupCard.style.display = 'none';
+                return false;
             }
         } catch (e) {
-            // fallback to normal login
+            if (loginCard) loginCard.style.display = 'block';
+            if (setupCard) setupCard.style.display = 'none';
+            return false;
         }
     }
 
@@ -131,12 +144,17 @@
         stopStatusPolling();
     }
 
-    function showDashboard() {
+    function showDashboard(forceDefaultPassword = false) {
         loginScreen.classList.remove('active');
         dashboardScreen.classList.add('active');
         loadDevices();
         checkAgentHealth();
-        checkPasswordStatus();
+        if (forceDefaultPassword) {
+            if (passwordBanner) passwordBanner.style.display = 'flex';
+            openPasswordModal(true);
+        } else {
+            checkPasswordStatus();
+        }
         startStatusPolling();
     }
 
@@ -149,16 +167,17 @@
             });
             token = res.token;
             localStorage.setItem('wol_token', token);
-            showDashboard();
+            showDashboard(res.is_default_password === true);
         } catch (err) {
             loginError.textContent = 'Hatalı kullanıcı adı veya şifre';
             shake(loginForm);
         }
     }
 
-    function logout() {
+    async function logout() {
         token = null;
         localStorage.removeItem('wol_token');
+        await checkSetupStatus();
         showLogin();
     }
 
@@ -168,6 +187,8 @@
             const res = await api('/api/auth/status');
             if (res.is_default_password) {
                 if (passwordBanner) passwordBanner.style.display = 'flex';
+                // Automatically open modal when default password is active
+                openPasswordModal(true);
             } else {
                 if (passwordBanner) passwordBanner.style.display = 'none';
             }
@@ -176,19 +197,43 @@
         }
     }
 
-    function openPasswordModal() {
+    function openPasswordModal(isForced = false) {
         if (!passwordModal) return;
         passwordForm.reset();
         passwordError.style.display = 'none';
         passwordError.textContent = '';
-        passwordModal.style.display = 'flex';
+
         const oldInput = $('#old-password');
-        if (oldInput) oldInput.focus();
+        const modalTitle = $('#password-modal-title');
+        const modalSubtitle = $('#password-modal-subtitle');
+        const cancelBtn = $('#password-cancel');
+        const closeBtn = $('#password-modal-close');
+
+        if (isForced) {
+            if (modalTitle) modalTitle.innerHTML = '<span class="material-symbols-rounded" style="color:#f59e0b;vertical-align:middle;margin-right:6px;">security_update_warning</span> Şifre Değiştirin';
+            if (modalSubtitle) modalSubtitle.textContent = 'Varsayılan şifre ("admin") tespit edildi. Güvenliğiniz için lütfen yeni bir şifre belirleyin.';
+            if (oldInput) oldInput.value = 'admin';
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            if (closeBtn) closeBtn.style.display = 'none';
+            passwordModal.style.display = 'flex';
+            const newPass = $('#new-password');
+            if (newPass) newPass.focus();
+        } else {
+            if (modalTitle) modalTitle.textContent = 'Şifre Değiştir';
+            if (modalSubtitle) modalSubtitle.textContent = 'Hesabınızın güvenliği için lütfen yeni bir şifre belirleyin.';
+            if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+            if (closeBtn) closeBtn.style.display = 'inline-flex';
+            passwordModal.style.display = 'flex';
+            if (oldInput) oldInput.focus();
+        }
     }
 
     function closePasswordModal() {
         if (!passwordModal) return;
         passwordModal.style.display = 'none';
+        if (window.location.hash === '#change-password') {
+            history.replaceState(null, '', window.location.pathname);
+        }
     }
 
     async function changePassword(e) {
@@ -682,6 +727,16 @@
                 closePasswordModal();
             }
         });
+
+        // Hash route handling (#change-password)
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash === '#change-password') {
+                openPasswordModal(false);
+            }
+        });
+        if (window.location.hash === '#change-password') {
+            openPasswordModal(false);
+        }
     }
 
     // ─── Expose API for inline handlers ─────────
@@ -690,6 +745,8 @@
         editDevice,
         confirmDelete,
         checkStatus,
+        openPasswordModal,
+        closePasswordModal,
     };
 
     // ─── Boot ───────────────────────────────────

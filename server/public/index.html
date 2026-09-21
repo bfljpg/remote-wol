@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=2.2">
 </head>
 <body>
 
@@ -94,9 +94,9 @@
                 <span class="material-symbols-rounded">add</span>
                 <span class="btn-label">Cihaz Ekle</span>
             </button>
-            <button id="password-btn" class="btn btn-icon" title="Şifre Değiştir">
+            <a href="#change-password" id="password-btn" class="btn btn-icon" title="Şifre Değiştir" onclick="app.openPasswordModal(); return false;">
                 <span class="material-symbols-rounded">key</span>
-            </button>
+            </a>
             <button id="logout-btn" class="btn btn-icon" title="Çıkış">
                 <span class="material-symbols-rounded">logout</span>
             </button>
@@ -111,10 +111,10 @@
                 <strong>Güvenlik Uyarısı:</strong> Varsayılan yönetici parolasını kullanıyorsunuz. Lütfen güvenliğiniz için yeni bir parola belirleyin.
             </div>
         </div>
-        <button id="banner-change-pass-btn" class="btn btn-warning-action">
+        <a href="#change-password" id="banner-change-pass-btn" class="btn btn-warning-action" onclick="app.openPasswordModal(); return false;">
             <span class="material-symbols-rounded">key</span>
             Şifreyi Değiştir
-        </button>
+        </a>
     </div>
 
     <!-- Device Grid -->
@@ -219,29 +219,32 @@
 <div id="password-modal" class="modal-overlay" style="display:none;">
     <div class="modal glass modal-sm">
         <div class="modal-header">
-            <h2>Şifre Değiştir</h2>
-            <button id="password-modal-close" class="btn btn-icon">
+            <h2 id="password-modal-title">Şifre Değiştir</h2>
+            <button id="password-modal-close" class="btn btn-icon" onclick="app.closePasswordModal()" title="Kapat">
                 <span class="material-symbols-rounded">close</span>
             </button>
         </div>
-        <form id="password-form">
+        <p class="modal-subtitle" id="password-modal-subtitle" style="color: var(--text-secondary); font-size: 0.88rem; margin: -16px 0 20px 0; line-height: 1.4;">
+            Hesabınızın güvenliği için lütfen yeni bir şifre belirleyin.
+        </p>
+        <form id="password-form" action="/api/auth/change-password" method="POST">
             <div class="form-grid">
                 <div class="input-group">
                     <label for="old-password">Mevcut Şifre</label>
-                    <input type="password" id="old-password" placeholder="Mevcut şifreniz" required autocomplete="current-password">
+                    <input type="password" id="old-password" name="old_password" placeholder="Mevcut şifreniz" required autocomplete="current-password">
                 </div>
                 <div class="input-group">
                     <label for="new-password">Yeni Şifre (En az 6 karakter)</label>
-                    <input type="password" id="new-password" placeholder="Yeni şifreniz" required minlength="6" autocomplete="new-password">
+                    <input type="password" id="new-password" name="new_password" placeholder="Yeni şifreniz" required minlength="6" autocomplete="new-password">
                 </div>
                 <div class="input-group">
                     <label for="confirm-password">Yeni Şifre (Tekrar)</label>
-                    <input type="password" id="confirm-password" placeholder="Yeni şifrenizi doğrulayın" required minlength="6" autocomplete="new-password">
+                    <input type="password" id="confirm-password" name="confirm_password" placeholder="Yeni şifrenizi doğrulayın" required minlength="6" autocomplete="new-password">
                 </div>
             </div>
             <p id="password-error" class="error-text" style="display:none; margin-top: 10px;"></p>
             <div class="modal-actions">
-                <button type="button" id="password-cancel" class="btn btn-ghost">İptal</button>
+                <button type="button" id="password-cancel" class="btn btn-ghost" onclick="app.closePasswordModal()">İptal</button>
                 <button type="submit" id="password-submit" class="btn btn-primary">
                     <span class="material-symbols-rounded">lock_reset</span>
                     Şifreyi Güncelle
@@ -254,6 +257,6 @@
 <!-- Toast Container -->
 <div id="toast-container" class="toast-container"></div>
 
-<script src="/js/app.js"></script>
+<script src="/js/app.js?v=2.2"></script>
 </body>
 </html>

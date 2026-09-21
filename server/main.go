@@ -73,6 +73,11 @@ func main() {
 			path = "/index.html"
 		}
 
+		// Set anti-caching headers for frontend assets during updates
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+
 		// Check if the file exists in the embedded FS
 		if f, err := publicContent.Open(path[1:]); err == nil {
 			f.Close()
