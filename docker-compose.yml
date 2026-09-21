@@ -4,7 +4,7 @@ services:
     build: .
     container_name: remote-wol
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     volumes:
       - wol-data:/app/data
     env_file:
@@ -20,11 +20,22 @@ services:
     image: rapiz1/rathole:latest
     container_name: rathole-server
     ports:
-      - "2333:2333"
-    volumes:
-      - ./rathole/server.toml:/app/config.toml:ro
+      - "${RATHOLE_PORT:-2333}:${RATHOLE_PORT:-2333}"
+    configs:
+      - source: rathole_config
+        target: /app/config.toml
     command: ["--server", "/app/config.toml"]
     restart: unless-stopped
+
+configs:
+  rathole_config:
+    content: |
+      [server]
+      bind_addr = "0.0.0.0:${RATHOLE_PORT:-2333}"
+
+      [server.services.wol-agent]
+      token = "${RATHOLE_TOKEN:-change-me-rathole-token}"
+      bind_addr = "0.0.0.0:9090"
 
 volumes:
   wol-data:

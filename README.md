@@ -54,11 +54,8 @@ cd remote-wol
 
 # .env dosyasını oluştur
 cp server/.env.example .env
-# .env dosyasını düzenle — JWT_SECRET, INITIAL_ADMIN_PASS, AGENT_TOKEN değiştir!
-# (Admin bilgileri ilk açılışta veritabanına aktarılır, sonrasında DB üzerinden yönetilir)
-
-# Rathole token'ını ayarla
-# rathole/server.toml dosyasındaki token'ı değiştir
+# .env dosyasını düzenle — JWT_SECRET, INITIAL_ADMIN_PASS, RATHOLE_TOKEN, AGENT_TOKEN değerlerini belirleyin!
+# (Tüm servisler —Go backend ve Rathole tüneli— ayarlarını tek bir .env dosyasından alır)
 
 # Başlat
 docker compose up -d
