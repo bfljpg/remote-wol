@@ -1,0 +1,10 @@
+# ============================================================
+# Rathole Client Yapılandırması (OpenWrt modem üzerinde çalışır)
+# ============================================================
+
+[client]
+remote_addr = "VPS_IP_ADRESI:2333"    # VPS'in IP adresi ve Rathole port'u
+
+[client.services.wol-agent]
+token = "CHANGE_ME_SECURE_TOKEN_HERE"    # Server ile aynı token olmalı
+local_addr = "127.0.0.1:8080"            # OpenWrt'deki WoL Agent portu

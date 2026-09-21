@@ -1,0 +1,10 @@
+# ============================================================
+# Rathole Server Yapılandırması (VPS üzerinde çalışır)
+# ============================================================
+
+[server]
+bind_addr = "0.0.0.0:2333"    # Client'ların bağlanacağı port
+
+[server.services.wol-agent]
+token = "CHANGE_ME_SECURE_TOKEN_HERE"    # Client ile aynı token olmalı
+bind_addr = "127.0.0.1:9090"             # Go backend bu adrese istek atar

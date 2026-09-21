@@ -1,0 +1,14 @@
+[Unit]
+Description=Rathole Server — Remote WoL Tunnel
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/rathole --server /etc/rathole/server.toml
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
