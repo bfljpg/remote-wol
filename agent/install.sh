@@ -55,16 +55,18 @@ if [ -z "$iface" ]; then
     iface="br-lan"
 fi
 
+mac=$(echo "$mac" | sed 's/%3[aA]/:/g; s/-/:/g')
+
 echo "$mac" | grep -qE '^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$'
 if [ $? -ne 0 ]; then
     echo '{"success":false,"message":"invalid MAC address format"}'
     exit 0
 fi
 
-if etherwake -i "$iface" "$mac" 2>/dev/null; then
+if etherwake -b -i "$iface" "$mac" 2>/dev/null || etherwake -i "$iface" "$mac" 2>/dev/null; then
     echo "{\"success\":true,\"message\":\"Magic packet sent to $mac via $iface\"}"
 else
-    if ether-wake -i "$iface" "$mac" 2>/dev/null; then
+    if ether-wake -b -i "$iface" "$mac" 2>/dev/null || ether-wake -i "$iface" "$mac" 2>/dev/null; then
         echo "{\"success\":true,\"message\":\"Magic packet sent to $mac via $iface\"}"
     else
         echo '{"success":false,"message":"etherwake command failed"}'

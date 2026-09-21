@@ -32,6 +32,9 @@ if [ -z "$iface" ]; then
     iface="br-lan"
 fi
 
+# Clean and decode MAC address (support %3A, %3a, and -)
+mac=$(echo "$mac" | sed 's/%3[aA]/:/g; s/-/:/g')
+
 # Validate MAC format (basic check)
 echo "$mac" | grep -qE '^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$'
 if [ $? -ne 0 ]; then
@@ -39,12 +42,12 @@ if [ $? -ne 0 ]; then
     exit 0
 fi
 
-# Send magic packet
-if etherwake -i "$iface" "$mac" 2>/dev/null; then
+# Send magic packet (tries broadcast -b first, then directed)
+if etherwake -b -i "$iface" "$mac" 2>/dev/null || etherwake -i "$iface" "$mac" 2>/dev/null; then
     echo "{\"success\":true,\"message\":\"Magic packet sent to $mac via $iface\"}"
 else
-    # Fallback: try with ether-wake (some OpenWrt versions)
-    if ether-wake -i "$iface" "$mac" 2>/dev/null; then
+    # Fallback: try with ether-wake
+    if ether-wake -b -i "$iface" "$mac" 2>/dev/null || ether-wake -i "$iface" "$mac" 2>/dev/null; then
         echo "{\"success\":true,\"message\":\"Magic packet sent to $mac via $iface\"}"
     else
         echo '{"success":false,"message":"etherwake command failed"}'

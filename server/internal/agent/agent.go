@@ -52,12 +52,13 @@ func NewClient(baseURL, token string) *Client {
 
 // Wake sends a magic packet via the OpenWrt agent
 func (c *Client) Wake(mac, iface string) (*WakeResult, error) {
-	params := url.Values{
-		"mac":   {mac},
-		"iface": {iface},
-		"token": {c.token},
-	}
-	resp, err := c.httpClient.Get(fmt.Sprintf("%s/cgi-bin/wake?%s", c.baseURL, params.Encode()))
+	reqURL := fmt.Sprintf("%s/cgi-bin/wake?mac=%s&iface=%s&token=%s",
+		c.baseURL,
+		mac,
+		url.QueryEscape(iface),
+		url.QueryEscape(c.token),
+	)
+	resp, err := c.httpClient.Get(reqURL)
 	if err != nil {
 		return nil, fmt.Errorf("agent unreachable: %w", err)
 	}
