@@ -1,5 +1,5 @@
 # Multi-stage build — Final image ~20 MB
-FROM golang:1.24-alpine AS builder
+FROM golang:alpine AS builder
 
 WORKDIR /app
 COPY server/go.mod server/go.sum ./
@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o remote-wol .
 
 # ---
 
-FROM alpine:3.20
+FROM alpine:latest
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /app/remote-wol /usr/local/bin/remote-wol
 
