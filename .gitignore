@@ -1,0 +1,23 @@
+# Binaries
+remote-wol
+*.exe
+
+# Env
+.env
+
+# Database
+*.db
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Go
+vendor/
