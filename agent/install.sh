@@ -221,20 +221,21 @@ TOML
 # ─── 7. Rathole init.d servisi ───
 cat > /etc/init.d/rathole <<'SERVICE'
 #!/bin/sh /etc/rc.common
+
 START=98
 STOP=11
 
-start() {
-    killall rathole 2>/dev/null || true
-    sleep 1
-    /usr/bin/rathole --client /etc/rathole/client.toml >/dev/null 2>&1 &
-    echo "Rathole client started"
+USE_PROCD=1
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /usr/bin/rathole /etc/rathole/client.toml
+    procd_set_param stdout 1
+    procd_set_param stderr 1
+    procd_set_param respawn
+    procd_close_instance
 }
 
-stop() {
-    killall rathole 2>/dev/null
-    echo "Rathole client stopped"
-}
 SERVICE
 
 chmod +x /etc/init.d/rathole
